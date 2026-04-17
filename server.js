@@ -27,6 +27,34 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS data_dumps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    entry_count INTEGER NOT NULL DEFAULT 0,
+    created_by INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS dump_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dump_id INTEGER NOT NULL,
+    rat_id TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    sex TEXT NOT NULL,
+    weight REAL NOT NULL,
+    strain TEXT NOT NULL,
+    diet_group TEXT NOT NULL,
+    drug_name TEXT NOT NULL,
+    dose TEXT NOT NULL,
+    route TEXT NOT NULL,
+    brain_region TEXT NOT NULL,
+    notes TEXT,
+    original_created_by TEXT,
+    original_created_at TEXT,
+    FOREIGN KEY (dump_id) REFERENCES data_dumps(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     rat_id TEXT NOT NULL,
@@ -338,6 +366,99 @@ app.get('/api/import/template', requireAuth, async (req, res) => {
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename=import_template.xlsx');
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
+// --- Data Dumps ---
+app.get('/api/dumps', requireAuth, (req, res) => {
+  const dumps = db.prepare(`
+    SELECT d.*, u.display_name as created_by_name
+    FROM data_dumps d JOIN users u ON d.created_by = u.id
+    ORDER BY d.created_at DESC
+  `).all();
+  res.json(dumps);
+});
+
+app.post('/api/dumps', requireAuth, (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Dump name is required' });
+
+  const entries = db.prepare(`
+    SELECT e.*, u.display_name as created_by_name
+    FROM entries e JOIN users u ON e.created_by = u.id
+  `).all();
+
+  if (entries.length === 0) return res.status(400).json({ error: 'No entries to store' });
+
+  const result = db.prepare('INSERT INTO data_dumps (name, entry_count, created_by) VALUES (?, ?, ?)')
+    .run(name, entries.length, req.session.userId);
+
+  const insertDumpEntry = db.prepare(`
+    INSERT INTO dump_entries (dump_id, rat_id, age, sex, weight, strain, diet_group, drug_name, dose, route, brain_region, notes, original_created_by, original_created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const e of entries) {
+    insertDumpEntry.run(result.lastInsertRowid, e.rat_id, e.age, e.sex, e.weight, e.strain, e.diet_group, e.drug_name, e.dose, e.route, e.brain_region, e.notes, e.created_by_name, e.created_at);
+  }
+
+  const dump = db.prepare(`
+    SELECT d.*, u.display_name as created_by_name
+    FROM data_dumps d JOIN users u ON d.created_by = u.id WHERE d.id = ?
+  `).get(result.lastInsertRowid);
+  res.json(dump);
+});
+
+app.get('/api/dumps/:id/entries', requireAuth, (req, res) => {
+  const entries = db.prepare('SELECT * FROM dump_entries WHERE dump_id = ? ORDER BY id').all(req.params.id);
+  res.json(entries);
+});
+
+app.delete('/api/dumps/:id', requireAuth, (req, res) => {
+  db.prepare('DELETE FROM dump_entries WHERE dump_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM data_dumps WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+app.get('/api/dumps/:id/export', requireAuth, async (req, res) => {
+  const dump = db.prepare('SELECT * FROM data_dumps WHERE id = ?').get(req.params.id);
+  if (!dump) return res.status(404).json({ error: 'Dump not found' });
+
+  const entries = db.prepare('SELECT * FROM dump_entries WHERE dump_id = ? ORDER BY id').all(req.params.id);
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(dump.name);
+
+  sheet.columns = [
+    { header: 'Rat ID', key: 'rat_id', width: 12 },
+    { header: 'Age (weeks)', key: 'age', width: 12 },
+    { header: 'Sex', key: 'sex', width: 8 },
+    { header: 'Weight (g)', key: 'weight', width: 12 },
+    { header: 'Strain', key: 'strain', width: 16 },
+    { header: 'Diet Group', key: 'diet_group', width: 14 },
+    { header: 'Drug/Compound', key: 'drug_name', width: 18 },
+    { header: 'Dose', key: 'dose', width: 14 },
+    { header: 'Route', key: 'route', width: 10 },
+    { header: 'Brain Region', key: 'brain_region', width: 18 },
+    { header: 'Notes', key: 'notes', width: 24 },
+    { header: 'Entered By', key: 'original_created_by', width: 16 },
+    { header: 'Date', key: 'original_created_at', width: 18 },
+  ];
+
+  sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16213E' } };
+  sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+  entries.forEach(e => sheet.addRow(e));
+
+  for (let i = 2; i <= entries.length + 1; i++) {
+    if (i % 2 === 0) {
+      sheet.getRow(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F8FC' } };
+    }
+  }
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${dump.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
   await workbook.xlsx.write(res);
   res.end();
 });

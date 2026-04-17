@@ -195,6 +195,22 @@
     .chart-card h3 { font-size: 0.92rem; color: #16213e; margin-bottom: 1rem; }
     .chart-card canvas { width: 100% !important; max-height: 320px; }
 
+    /* --- Dump Cards --- */
+    .dump-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border: 1.5px solid #e8eaf0;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .dump-card:hover { border-color: #4361ee; box-shadow: 0 2px 8px rgba(67,97,238,0.08); }
+    .dump-card .dump-info h3 { font-size: 0.95rem; color: #16213e; margin-bottom: 0.2rem; }
+    .dump-card .dump-info p { font-size: 0.78rem; color: #888; }
+    .dump-card .dump-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
     .toast {
       position: fixed; bottom: 1.5rem; right: 1.5rem;
       background: #2a9d8f; color: #fff;
@@ -280,6 +296,7 @@
     <button class="tab-btn active" data-tab="data-entry" onclick="switchTab('data-entry')">Data Entry</button>
     <button class="tab-btn" data-tab="results" onclick="switchTab('results')">Results</button>
     <button class="tab-btn" data-tab="charts" onclick="switchTab('charts')">Charts</button>
+    <button class="tab-btn" data-tab="dumps" onclick="switchTab('dumps')">Stored Dumps</button>
   </div>
 
   <!-- ===== DATA ENTRY TAB ===== -->
@@ -411,6 +428,7 @@
           <input type="text" class="search-box" id="search" placeholder="Search entries...">
           <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
             <span class="record-count" id="record-count">0 records</span>
+            <button class="btn btn-primary btn-sm" onclick="showStoreDialog()">Store as Dump</button>
             <button class="btn btn-export btn-sm" onclick="exportExcel()">Export Excel</button>
             <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
           </div>
@@ -471,6 +489,57 @@
           <canvas id="chart-weight-dist"></canvas>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== STORED DUMPS TAB ===== -->
+  <div class="tab-content" id="tab-dumps">
+    <div class="container">
+      <div class="panel">
+        <h2>Stored Data Dumps</h2>
+        <div id="dumps-list"></div>
+        <div class="empty-state" id="dumps-empty">No stored dumps yet. Go to the Results tab and click "Store as Dump" to save a snapshot.</div>
+      </div>
+      <div class="panel" id="dump-detail-panel" style="display:none;">
+        <h2 id="dump-detail-title">Dump Entries</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Rat ID</th>
+                <th>Age</th>
+                <th>Sex</th>
+                <th>Weight (g)</th>
+                <th>Strain</th>
+                <th>Diet</th>
+                <th>Drug</th>
+                <th>Dose</th>
+                <th>Route</th>
+                <th>Brain Region</th>
+                <th>Notes</th>
+                <th>Entered By</th>
+              </tr>
+            </thead>
+            <tbody id="dump-detail-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Store Dump Modal -->
+<div id="store-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:none; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:12px; padding:2rem; width:400px; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+    <h2 style="font-size:1.1rem; color:#16213e; margin-bottom:1rem;">Store Current Data as Dump</h2>
+    <p style="font-size:0.82rem; color:#888; margin-bottom:1rem;">This saves a snapshot of all current entries. The original entries remain untouched.</p>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#555; margin-bottom:0.3rem; display:block;">Dump Name</label>
+      <input type="text" id="dump-name-input" placeholder="e.g. Dummy Run" style="width:100%; padding:0.6rem 0.75rem; border:1.5px solid #d1d5db; border-radius:6px; font-size:0.9rem;">
+    </div>
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="hideStoreDialog()">Cancel</button>
+      <button class="btn btn-primary" onclick="storeDump()">Store</button>
     </div>
   </div>
 </div>
@@ -587,6 +656,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
   if (tab === 'charts') loadCharts();
   if (tab === 'results') renderTable();
+  if (tab === 'dumps') loadDumps();
 }
 
 // ============================================================
@@ -1013,6 +1083,122 @@ function showImportStatus(type, message) {
 
 function downloadTemplate() {
   window.location.href = '/api/import/template';
+}
+
+// ============================================================
+// Data Dumps
+// ============================================================
+let dumps = [];
+
+async function loadDumps() {
+  const res = await fetch('/api/dumps');
+  dumps = await res.json();
+  renderDumps();
+}
+
+function renderDumps() {
+  const list = document.getElementById('dumps-list');
+  const empty = document.getElementById('dumps-empty');
+  list.innerHTML = '';
+  empty.style.display = dumps.length ? 'none' : '';
+
+  dumps.forEach(d => {
+    const date = new Date(d.created_at + 'Z').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const div = document.createElement('div');
+    div.className = 'dump-card';
+    div.innerHTML = `
+      <div class="dump-info">
+        <h3>${esc(d.name)}</h3>
+        <p>${d.entry_count} entries &middot; Stored by ${esc(d.created_by_name)} &middot; ${date}</p>
+      </div>
+      <div class="dump-actions">
+        <button class="btn btn-primary btn-sm" onclick="viewDump(${d.id}, '${esc(d.name).replace(/'/g, "\\'")}')">View</button>
+        <button class="btn btn-export btn-sm" onclick="exportDump(${d.id})">Export</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDump(${d.id})">Delete</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+async function viewDump(id, name) {
+  const res = await fetch(`/api/dumps/${id}/entries`);
+  const dumpEntries = await res.json();
+
+  document.getElementById('dump-detail-panel').style.display = '';
+  document.getElementById('dump-detail-title').textContent = name;
+
+  const body = document.getElementById('dump-detail-body');
+  body.innerHTML = '';
+
+  dumpEntries.forEach(e => {
+    const dietClass = e.diet_group === 'Obesogenic' ? 'obesogenic' : 'control';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(e.rat_id)}</td>
+      <td>${esc(String(e.age))}</td>
+      <td>${esc(e.sex)}</td>
+      <td>${esc(String(e.weight))}</td>
+      <td>${esc(e.strain)}</td>
+      <td><span class="diet-badge ${dietClass}">${esc(e.diet_group)}</span></td>
+      <td>${esc(e.drug_name)}</td>
+      <td>${esc(e.dose)}</td>
+      <td>${esc(e.route)}</td>
+      <td>${esc(e.brain_region)}</td>
+      <td>${esc(e.notes || '\u2014')}</td>
+      <td>${esc(e.original_created_by || '\u2014')}</td>`;
+    body.appendChild(tr);
+  });
+
+  document.getElementById('dump-detail-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function exportDump(id) {
+  window.location.href = `/api/dumps/${id}/export`;
+  toast('Downloading dump...');
+}
+
+async function deleteDump(id) {
+  if (!confirm('Delete this stored dump? This cannot be undone.')) return;
+  await fetch(`/api/dumps/${id}`, { method: 'DELETE' });
+  document.getElementById('dump-detail-panel').style.display = 'none';
+  await loadDumps();
+  toast('Dump deleted');
+}
+
+function showStoreDialog() {
+  if (!entries.length) return toast('No entries to store');
+  const modal = document.getElementById('store-modal');
+  modal.style.display = 'flex';
+  document.getElementById('dump-name-input').value = '';
+  document.getElementById('dump-name-input').focus();
+}
+
+function hideStoreDialog() {
+  document.getElementById('store-modal').style.display = 'none';
+}
+
+async function storeDump() {
+  const name = document.getElementById('dump-name-input').value.trim();
+  if (!name) {
+    document.getElementById('dump-name-input').style.borderColor = '#e63946';
+    return;
+  }
+
+  const res = await fetch('/api/dumps', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    toast(data.error || 'Failed to store dump');
+    return;
+  }
+
+  hideStoreDialog();
+  toast(`"${name}" stored successfully`);
+  await loadDumps();
 }
 
 // ============================================================
