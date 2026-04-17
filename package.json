@@ -1,0 +1,19 @@
+{
+  "name": "obesogenic-diet-brain-study",
+  "version": "1.0.0",
+  "description": "Lab results tracker for obesogenic diet brain study",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "connect-sqlite3": "^0.9.15",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.0",
+    "express-session": "^1.18.1",
+    "multer": "^2.1.1"
+  }
+}

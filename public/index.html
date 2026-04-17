@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obesogenic Diet Brain Study - Lab Results</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* --- Auth Screen --- */
+    .auth-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+
+    .auth-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 380px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    .auth-card h1 { font-size: 1.3rem; color: #16213e; margin-bottom: 0.25rem; }
+    .auth-card p.subtitle { font-size: 0.82rem; color: #888; margin-bottom: 1.5rem; }
+
+    .auth-card .form-group { margin-bottom: 1rem; }
+    .auth-card label { display: block; font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .auth-card input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      background: #fafbfc;
+    }
+    .auth-card input:focus { outline: none; border-color: #4361ee; box-shadow: 0 0 0 3px rgba(67,97,238,0.12); }
+
+    .auth-card .btn { width: 100%; margin-top: 0.5rem; }
+    .auth-card .toggle { text-align: center; margin-top: 1rem; font-size: 0.82rem; color: #888; }
+    .auth-card .toggle a { color: #4361ee; cursor: pointer; text-decoration: none; font-weight: 600; }
+    .auth-card .error-msg { background: #fde8e8; color: #c1121f; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.82rem; margin-bottom: 1rem; display: none; }
+
+    /* --- App Shell --- */
+    .app { display: none; }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header .left h1 { font-size: 1.2rem; font-weight: 600; }
+    header .left p { font-size: 0.78rem; color: #a8b2d1; }
+
+    header .right { display: flex; align-items: center; gap: 1rem; }
+    header .user-badge { font-size: 0.82rem; color: #a8b2d1; }
+    header .user-badge strong { color: #fff; }
+
+    /* --- Tabs --- */
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: #fff;
+      border-bottom: 2px solid #e8eaf0;
+      padding: 0 2rem;
+    }
+
+    .tab-btn {
+      padding: 0.85rem 1.5rem;
+      border: none;
+      background: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn:hover { color: #444; }
+    .tab-btn.active { color: #4361ee; border-bottom-color: #4361ee; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* --- Shared --- */
+    .container { max-width: 1280px; margin: 1.5rem auto; padding: 0 1.5rem; }
+
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel h2 {
+      font-size: 1.05rem;
+      margin-bottom: 1.25rem;
+      color: #16213e;
+      border-bottom: 2px solid #e8eaf0;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin-bottom: 0.3rem; }
+    .form-group input, .form-group select {
+      padding: 0.55rem 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+      background: #fafbfc;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #4361ee; box-shadow: 0 0 0 3px rgba(67,97,238,0.12); }
+    .form-group input.invalid { border-color: #e63946; box-shadow: 0 0 0 3px rgba(230,57,70,0.1); }
+
+    .form-actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; align-items: center; }
+
+    .btn {
+      padding: 0.6rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: #4361ee; color: #fff; }
+    .btn-primary:hover { background: #3a56d4; }
+    .btn-secondary { background: #e8eaf0; color: #444; }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-danger { background: #e63946; color: #fff; }
+    .btn-danger:hover { background: #c1121f; }
+    .btn-export { background: #2a9d8f; color: #fff; }
+    .btn-export:hover { background: #238a7e; }
+    .btn-logout { background: rgba(255,255,255,0.12); color: #fff; font-size: 0.8rem; padding: 0.4rem 1rem; }
+    .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 4px; }
+
+    /* --- Table --- */
+    .table-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+    .search-box { padding: 0.5rem 0.75rem; border: 1.5px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; width: 260px; background: #fafbfc; }
+    .search-box:focus { outline: none; border-color: #4361ee; }
+    .record-count { font-size: 0.82rem; color: #777; }
+
+    .table-wrapper { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    thead th {
+      background: #16213e; color: #e0e0e0; padding: 0.65rem 0.7rem;
+      text-align: left; font-weight: 600; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
+      cursor: pointer; user-select: none;
+    }
+    thead th:hover { background: #1a2744; }
+    thead th .sort-arrow { margin-left: 0.3rem; font-size: 0.65rem; opacity: 0.4; }
+    thead th.sorted .sort-arrow { opacity: 1; }
+
+    tbody tr { border-bottom: 1px solid #eee; }
+    tbody tr:hover { background: #f7f8fc; }
+    tbody td { padding: 0.55rem 0.7rem; white-space: nowrap; }
+    tbody td.actions { display: flex; gap: 0.35rem; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #999; font-size: 0.95rem; }
+
+    .diet-badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.73rem; font-weight: 600; }
+    .diet-badge.obesogenic { background: #fde8e8; color: #c1121f; }
+    .diet-badge.control { background: #e0f5ee; color: #1b7a4a; }
+
+    /* --- Charts --- */
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 1.5rem; }
+    .chart-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 1.25rem 1.5rem; }
+    .chart-card h3 { font-size: 0.92rem; color: #16213e; margin-bottom: 1rem; }
+    .chart-card canvas { width: 100% !important; max-height: 320px; }
+
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: #2a9d8f; color: #fff;
+      padding: 0.75rem 1.25rem; border-radius: 8px;
+      font-size: 0.88rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .table-toolbar { flex-direction: column; align-items: stretch; }
+      .search-box { width: 100%; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .tabs { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== AUTH SCREEN ==================== -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-card">
+    <!-- Login Form -->
+    <div id="login-view">
+      <h1>Lab Results Tracker</h1>
+      <p class="subtitle">Obesogenic Diet Brain Study</p>
+      <div class="error-msg" id="login-error"></div>
+      <form id="login-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="login-username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" required autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" type="submit">Sign In</button>
+      </form>
+      <p class="toggle">No account? <a onclick="showRegister()">Create one</a></p>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-view" style="display:none;">
+      <h1>Create Account</h1>
+      <p class="subtitle">Join the research team</p>
+      <div class="error-msg" id="register-error"></div>
+      <form id="register-form">
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" id="reg-display" placeholder="e.g. Dr. Smith" required>
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="reg-username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Password (min 6 chars)</label>
+          <input type="password" id="reg-password" minlength="6" required autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" type="submit">Create Account</button>
+      </form>
+      <p class="toggle">Already have an account? <a onclick="showLogin()">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div class="app" id="app">
+  <header>
+    <div class="left">
+      <h1>Obesogenic Diet Brain Study</h1>
+      <p>Lab Results Tracker</p>
+    </div>
+    <div class="right">
+      <span class="user-badge">Signed in as <strong id="user-display"></strong></span>
+      <button class="btn btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="data-entry" onclick="switchTab('data-entry')">Data Entry</button>
+    <button class="tab-btn" data-tab="results" onclick="switchTab('results')">Results</button>
+    <button class="tab-btn" data-tab="charts" onclick="switchTab('charts')">Charts</button>
+  </div>
+
+  <!-- ===== DATA ENTRY TAB ===== -->
+  <div class="tab-content active" id="tab-data-entry">
+    <div class="container">
+      <div class="panel" id="form-panel">
+        <h2 id="form-title">New Entry</h2>
+        <form id="entry-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ratId">Rat ID</label>
+              <input type="text" id="ratId" placeholder="e.g. R-0042" required>
+            </div>
+            <div class="form-group">
+              <label for="age">Age (weeks)</label>
+              <input type="number" id="age" min="0" step="1" placeholder="e.g. 12" required>
+            </div>
+            <div class="form-group">
+              <label for="sex">Sex</label>
+              <select id="sex" required>
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="weight">Weight (g)</label>
+              <input type="number" id="weight" min="0" step="0.1" placeholder="e.g. 320.5" required>
+            </div>
+            <div class="form-group">
+              <label for="strain">Strain</label>
+              <select id="strain" required>
+                <option value="">Select</option>
+                <option value="Sprague Dawley">Sprague Dawley</option>
+                <option value="Wistar">Wistar</option>
+                <option value="Long-Evans">Long-Evans</option>
+                <option value="Lewis">Lewis</option>
+                <option value="Fischer 344">Fischer 344</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" id="strain-other-group" style="display:none;">
+              <label for="strainOther">Strain (specify)</label>
+              <input type="text" id="strainOther" placeholder="Enter strain">
+            </div>
+            <div class="form-group">
+              <label for="dietGroup">Diet Group</label>
+              <select id="dietGroup" required>
+                <option value="">Select</option>
+                <option value="Obesogenic">Obesogenic</option>
+                <option value="Control">Control</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="drugName">Drug / Compound</label>
+              <input type="text" id="drugName" placeholder="e.g. Liraglutide" required>
+            </div>
+            <div class="form-group">
+              <label for="dose">Dose</label>
+              <input type="text" id="dose" placeholder="e.g. 0.2 mg/kg" required>
+            </div>
+            <div class="form-group">
+              <label for="route">Route of Administration</label>
+              <select id="route" required>
+                <option value="">Select</option>
+                <option value="IP">Intraperitoneal (IP)</option>
+                <option value="SC">Subcutaneous (SC)</option>
+                <option value="IV">Intravenous (IV)</option>
+                <option value="PO">Oral (PO)</option>
+                <option value="IM">Intramuscular (IM)</option>
+                <option value="ICV">Intracerebroventricular (ICV)</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="brainRegion">Brain Region</label>
+              <select id="brainRegion" required>
+                <option value="">Select</option>
+                <option value="Hypothalamus">Hypothalamus</option>
+                <option value="Hippocampus">Hippocampus</option>
+                <option value="Prefrontal Cortex">Prefrontal Cortex</option>
+                <option value="Striatum">Striatum</option>
+                <option value="Amygdala">Amygdala</option>
+                <option value="VTA">VTA</option>
+                <option value="Nucleus Accumbens">Nucleus Accumbens</option>
+                <option value="Brainstem">Brainstem</option>
+                <option value="Cerebellum">Cerebellum</option>
+                <option value="Whole Brain">Whole Brain</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="notes">Notes (optional)</label>
+              <input type="text" id="notes" placeholder="Any additional notes">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submit-btn">Add Entry</button>
+            <button type="button" class="btn btn-secondary" id="cancel-btn" style="display:none;" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Import Panel -->
+      <div class="panel">
+        <h2>Import from Excel</h2>
+        <p style="font-size:0.85rem; color:#666; margin-bottom:1rem;">
+          Upload an <code>.xlsx</code> file with columns matching the entry fields.
+          Need the right format? <a href="#" onclick="downloadTemplate(); return false;" style="color:#4361ee; font-weight:600;">Download template</a>
+        </p>
+        <div id="import-dropzone" style="border:2px dashed #d1d5db; border-radius:8px; padding:2rem; text-align:center; cursor:pointer; transition: border-color 0.2s, background 0.2s;">
+          <div style="font-size:0.9rem; color:#888;">
+            <span style="font-size:1.5rem; display:block; margin-bottom:0.5rem;">&#128196;</span>
+            Drag &amp; drop an Excel file here, or <label for="import-file" style="color:#4361ee; font-weight:600; cursor:pointer;">browse</label>
+          </div>
+          <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none;">
+        </div>
+        <div id="import-status" style="margin-top:1rem; display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULTS TAB ===== -->
+  <div class="tab-content" id="tab-results">
+    <div class="container">
+      <div class="panel">
+        <h2>Recorded Entries</h2>
+        <div class="table-toolbar">
+          <input type="text" class="search-box" id="search" placeholder="Search entries...">
+          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <span class="record-count" id="record-count">0 records</span>
+            <button class="btn btn-export btn-sm" onclick="exportExcel()">Export Excel</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table id="results-table">
+            <thead>
+              <tr>
+                <th data-col="rat_id">Rat ID <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="age">Age <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="sex">Sex <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="weight">Weight (g) <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="strain">Strain <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="diet_group">Diet <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="drug_name">Drug <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="dose">Dose <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="route">Route <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="brain_region">Brain Region <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="notes">Notes <span class="sort-arrow">&#9650;</span></th>
+                <th data-col="created_by_name">Entered By <span class="sort-arrow">&#9650;</span></th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+          <div class="empty-state" id="empty-state">No entries yet. Switch to Data Entry to add records.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHARTS TAB ===== -->
+  <div class="tab-content" id="tab-charts">
+    <div class="container">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Average Weight by Diet Group</h3>
+          <canvas id="chart-weight-diet"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Weight vs Age (by Diet Group)</h3>
+          <canvas id="chart-weight-age"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Brain Regions Studied</h3>
+          <canvas id="chart-brain-regions"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Drugs / Compounds Tested</h3>
+          <canvas id="chart-drugs"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Sex Distribution by Diet Group</h3>
+          <canvas id="chart-sex"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Weight Distribution by Diet Group</h3>
+          <canvas id="chart-weight-dist"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// State
+// ============================================================
+let entries = [];
+let editingId = null;
+let sortCol = null;
+let sortAsc = true;
+let currentUser = null;
+const charts = {};
+
+const formFields = ['ratId','age','sex','weight','strain','strainOther','dietGroup','drugName','dose','route','brainRegion','notes'];
+const requiredFields = ['ratId','age','sex','weight','strain','dietGroup','drugName','dose','route','brainRegion'];
+
+// ============================================================
+// Auth
+// ============================================================
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    if (res.ok) {
+      currentUser = await res.json();
+      showApp();
+    }
+  } catch (e) {}
+}
+
+function showLogin() {
+  document.getElementById('login-view').style.display = '';
+  document.getElementById('register-view').style.display = 'none';
+}
+
+function showRegister() {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('register-view').style.display = '';
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('login-username').value,
+        password: document.getElementById('login-password').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = ''; return; }
+    currentUser = data;
+    showApp();
+  } catch (err) { errEl.textContent = 'Connection error'; errEl.style.display = ''; }
+});
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('register-error');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        displayName: document.getElementById('reg-display').value,
+        username: document.getElementById('reg-username').value,
+        password: document.getElementById('reg-password').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = ''; return; }
+    currentUser = data;
+    showApp();
+  } catch (err) { errEl.textContent = 'Connection error'; errEl.style.display = ''; }
+});
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = '';
+  document.getElementById('login-form').reset();
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-display').textContent = currentUser.displayName;
+  loadEntries();
+}
+
+// ============================================================
+// Data
+// ============================================================
+async function loadEntries() {
+  const res = await fetch('/api/entries');
+  entries = await res.json();
+  renderTable();
+}
+
+// ============================================================
+// Tabs
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+  if (tab === 'charts') loadCharts();
+  if (tab === 'results') renderTable();
+}
+
+// ============================================================
+// Form
+// ============================================================
+document.getElementById('strain').addEventListener('change', function() {
+  document.getElementById('strain-other-group').style.display = this.value === 'Other' ? '' : 'none';
+});
+
+document.getElementById('entry-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  let valid = true;
+  requiredFields.forEach(f => {
+    const el = document.getElementById(f);
+    if (!el.value.trim()) { el.classList.add('invalid'); valid = false; }
+    else el.classList.remove('invalid');
+  });
+  if (!valid) return;
+
+  const data = {};
+  formFields.forEach(f => data[f] = document.getElementById(f).value.trim());
+  if (data.strain === 'Other' && data.strainOther) data.strain = data.strainOther;
+  delete data.strainOther;
+
+  if (editingId) {
+    await fetch(`/api/entries/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    editingId = null;
+    document.getElementById('form-title').textContent = 'New Entry';
+    document.getElementById('submit-btn').textContent = 'Add Entry';
+    document.getElementById('cancel-btn').style.display = 'none';
+    toast('Entry updated');
+  } else {
+    await fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    toast('Entry added');
+  }
+
+  document.getElementById('entry-form').reset();
+  document.getElementById('strain-other-group').style.display = 'none';
+  await loadEntries();
+});
+
+function editEntry(id) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  editingId = id;
+  const map = { ratId: 'rat_id', age: 'age', sex: 'sex', weight: 'weight', strain: 'strain', dietGroup: 'diet_group', drugName: 'drug_name', dose: 'dose', route: 'route', brainRegion: 'brain_region', notes: 'notes' };
+  Object.entries(map).forEach(([formKey, dbKey]) => {
+    document.getElementById(formKey).value = entry[dbKey] || '';
+  });
+  document.getElementById('form-title').textContent = 'Edit Entry';
+  document.getElementById('submit-btn').textContent = 'Update Entry';
+  document.getElementById('cancel-btn').style.display = '';
+  switchTab('data-entry');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingId = null;
+  document.getElementById('entry-form').reset();
+  document.getElementById('form-title').textContent = 'New Entry';
+  document.getElementById('submit-btn').textContent = 'Add Entry';
+  document.getElementById('cancel-btn').style.display = 'none';
+  document.getElementById('strain-other-group').style.display = 'none';
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+  await loadEntries();
+  toast('Entry deleted');
+}
+
+async function clearAll() {
+  if (!entries.length) return;
+  if (!confirm('Delete ALL entries? This cannot be undone.')) return;
+  for (const e of entries) {
+    await fetch(`/api/entries/${e.id}`, { method: 'DELETE' });
+  }
+  await loadEntries();
+  toast('All entries cleared');
+}
+
+// ============================================================
+// Table
+// ============================================================
+const searchBox = document.getElementById('search');
+searchBox.addEventListener('input', renderTable);
+
+document.querySelectorAll('thead th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = true; }
+    document.querySelectorAll('thead th').forEach(h => h.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.sort-arrow').innerHTML = sortAsc ? '&#9650;' : '&#9660;';
+    renderTable();
+  });
+});
+
+function renderTable() {
+  const q = searchBox.value.toLowerCase();
+  let filtered = entries.filter(e =>
+    Object.values(e).some(v => String(v).toLowerCase().includes(q))
+  );
+
+  if (sortCol) {
+    filtered.sort((a, b) => {
+      let va = a[sortCol] || '', vb = b[sortCol] || '';
+      if (sortCol === 'age' || sortCol === 'weight') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+
+  const tableBody = document.getElementById('table-body');
+  tableBody.innerHTML = '';
+  document.getElementById('empty-state').style.display = filtered.length ? 'none' : '';
+
+  filtered.forEach(e => {
+    const dietClass = e.diet_group === 'Obesogenic' ? 'obesogenic' : 'control';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(e.rat_id)}</td>
+      <td>${esc(String(e.age))}</td>
+      <td>${esc(e.sex)}</td>
+      <td>${esc(String(e.weight))}</td>
+      <td>${esc(e.strain)}</td>
+      <td><span class="diet-badge ${dietClass}">${esc(e.diet_group)}</span></td>
+      <td>${esc(e.drug_name)}</td>
+      <td>${esc(e.dose)}</td>
+      <td>${esc(e.route)}</td>
+      <td>${esc(e.brain_region)}</td>
+      <td>${esc(e.notes || '\u2014')}</td>
+      <td>${esc(e.created_by_name)}</td>
+      <td class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="editEntry(${e.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteEntry(${e.id})">Del</button>
+      </td>`;
+    tableBody.appendChild(tr);
+  });
+
+  document.getElementById('record-count').textContent = `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
+}
+
+// ============================================================
+// Export
+// ============================================================
+function exportExcel() {
+  if (!entries.length) return toast('No data to export');
+  window.location.href = '/api/export/excel';
+  toast('Downloading Excel file...');
+}
+
+// ============================================================
+// Charts
+// ============================================================
+async function loadCharts() {
+  const [weightDiet, weightAge, brainRegions, drugs, sexDist, weightDistData] = await Promise.all([
+    fetch('/api/charts/weight-by-diet').then(r => r.json()),
+    fetch('/api/charts/weight-by-age').then(r => r.json()),
+    fetch('/api/charts/brain-regions').then(r => r.json()),
+    fetch('/api/charts/drugs').then(r => r.json()),
+    fetch('/api/charts/sex-distribution').then(r => r.json()),
+    fetch('/api/charts/weight-distribution').then(r => r.json()),
+  ]);
+
+  const colors = { Obesogenic: '#e63946', Control: '#2a9d8f' };
+
+  // Destroy existing charts
+  Object.values(charts).forEach(c => c.destroy());
+
+  // 1. Weight by Diet
+  charts.weightDiet = new Chart(document.getElementById('chart-weight-diet'), {
+    type: 'bar',
+    data: {
+      labels: weightDiet.map(d => d.diet_group),
+      datasets: [{
+        label: 'Avg Weight (g)',
+        data: weightDiet.map(d => d.avg_weight?.toFixed(1)),
+        backgroundColor: weightDiet.map(d => colors[d.diet_group] || '#888'),
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Weight (g)' } } }
+    }
+  });
+
+  // 2. Weight vs Age scatter
+  const obesePoints = weightAge.filter(d => d.diet_group === 'Obesogenic');
+  const controlPoints = weightAge.filter(d => d.diet_group === 'Control');
+  charts.weightAge = new Chart(document.getElementById('chart-weight-age'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Obesogenic', data: obesePoints.map(d => ({ x: d.age, y: d.weight })), backgroundColor: colors.Obesogenic, pointRadius: 5 },
+        { label: 'Control', data: controlPoints.map(d => ({ x: d.age, y: d.weight })), backgroundColor: colors.Control, pointRadius: 5 },
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { title: { display: true, text: 'Age (weeks)' } },
+        y: { title: { display: true, text: 'Weight (g)' }, beginAtZero: true }
+      }
+    }
+  });
+
+  // 3. Brain Regions
+  const brainLabels = [...new Set(brainRegions.map(d => d.brain_region))];
+  const brainObese = brainLabels.map(l => brainRegions.find(d => d.brain_region === l && d.diet_group === 'Obesogenic')?.count || 0);
+  const brainControl = brainLabels.map(l => brainRegions.find(d => d.brain_region === l && d.diet_group === 'Control')?.count || 0);
+  charts.brainRegions = new Chart(document.getElementById('chart-brain-regions'), {
+    type: 'bar',
+    data: {
+      labels: brainLabels,
+      datasets: [
+        { label: 'Obesogenic', data: brainObese, backgroundColor: colors.Obesogenic, borderRadius: 4 },
+        { label: 'Control', data: brainControl, backgroundColor: colors.Control, borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  // 4. Drugs
+  charts.drugs = new Chart(document.getElementById('chart-drugs'), {
+    type: 'doughnut',
+    data: {
+      labels: drugs.map(d => d.drug_name),
+      datasets: [{
+        data: drugs.map(d => d.count),
+        backgroundColor: ['#4361ee','#e63946','#2a9d8f','#f4a261','#264653','#e76f51','#a8dadc','#457b9d','#9b5de5','#f15bb5'],
+      }]
+    },
+    options: { responsive: true }
+  });
+
+  // 5. Sex distribution
+  const sexLabels = ['Male', 'Female'];
+  const sexObese = sexLabels.map(s => sexDist.find(d => d.sex === s && d.diet_group === 'Obesogenic')?.count || 0);
+  const sexControl = sexLabels.map(s => sexDist.find(d => d.sex === s && d.diet_group === 'Control')?.count || 0);
+  charts.sex = new Chart(document.getElementById('chart-sex'), {
+    type: 'bar',
+    data: {
+      labels: sexLabels,
+      datasets: [
+        { label: 'Obesogenic', data: sexObese, backgroundColor: colors.Obesogenic, borderRadius: 4 },
+        { label: 'Control', data: sexControl, backgroundColor: colors.Control, borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  // 6. Weight distribution box-like (using bar with error bars approximation)
+  const obeseWeights = weightDistData.filter(d => d.diet_group === 'Obesogenic').map(d => d.weight);
+  const controlWeights = weightDistData.filter(d => d.diet_group === 'Control').map(d => d.weight);
+
+  // Create histogram bins
+  const allWeights = weightDistData.map(d => d.weight);
+  if (allWeights.length > 0) {
+    const minW = Math.floor(Math.min(...allWeights) / 20) * 20;
+    const maxW = Math.ceil(Math.max(...allWeights) / 20) * 20;
+    const bins = [];
+    for (let b = minW; b < maxW; b += 20) bins.push(`${b}-${b+20}`);
+
+    const histObese = bins.map((_, i) => {
+      const lo = minW + i * 20, hi = lo + 20;
+      return obeseWeights.filter(w => w >= lo && w < hi).length;
+    });
+    const histControl = bins.map((_, i) => {
+      const lo = minW + i * 20, hi = lo + 20;
+      return controlWeights.filter(w => w >= lo && w < hi).length;
+    });
+
+    charts.weightDist = new Chart(document.getElementById('chart-weight-dist'), {
+      type: 'bar',
+      data: {
+        labels: bins,
+        datasets: [
+          { label: 'Obesogenic', data: histObese, backgroundColor: 'rgba(230,57,70,0.6)', borderColor: colors.Obesogenic, borderWidth: 1 },
+          { label: 'Control', data: histControl, backgroundColor: 'rgba(42,157,143,0.6)', borderColor: colors.Control, borderWidth: 1 },
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Weight Range (g)' } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Count' } }
+        }
+      }
+    });
+  } else {
+    charts.weightDist = new Chart(document.getElementById('chart-weight-dist'), {
+      type: 'bar',
+      data: { labels: ['No data'], datasets: [{ data: [0] }] },
+      options: { responsive: true }
+    });
+  }
+}
+
+// ============================================================
+// Utils
+// ============================================================
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+document.querySelectorAll('#entry-form input, #entry-form select').forEach(el => {
+  el.addEventListener('input', () => el.classList.remove('invalid'));
+});
+
+// ============================================================
+// Excel Import
+// ============================================================
+const dropzone = document.getElementById('import-dropzone');
+const importFile = document.getElementById('import-file');
+const importStatus = document.getElementById('import-status');
+
+dropzone.addEventListener('click', () => importFile.click());
+
+dropzone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropzone.style.borderColor = '#4361ee';
+  dropzone.style.background = '#f0f4ff';
+});
+
+dropzone.addEventListener('dragleave', () => {
+  dropzone.style.borderColor = '#d1d5db';
+  dropzone.style.background = '';
+});
+
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.style.borderColor = '#d1d5db';
+  dropzone.style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (file) handleImport(file);
+});
+
+importFile.addEventListener('change', () => {
+  if (importFile.files[0]) handleImport(importFile.files[0]);
+});
+
+async function handleImport(file) {
+  if (!file.name.match(/\.xlsx?$/i)) {
+    showImportStatus('error', 'Please upload an .xlsx file.');
+    return;
+  }
+
+  showImportStatus('loading', `Uploading <strong>${esc(file.name)}</strong>...`);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/import/excel', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showImportStatus('error', data.error);
+      return;
+    }
+
+    let msg = `Successfully imported <strong>${data.imported}</strong> of ${data.total} entries.`;
+    if (data.errors.length > 0) {
+      msg += `<br><br><strong>Warnings:</strong><ul style="margin:0.5rem 0 0 1.25rem; font-size:0.82rem;">`;
+      data.errors.forEach(e => msg += `<li>${esc(e)}</li>`);
+      msg += '</ul>';
+    }
+    showImportStatus(data.errors.length > 0 ? 'warning' : 'success', msg);
+    await loadEntries();
+    toast(`${data.imported} entries imported`);
+  } catch (e) {
+    showImportStatus('error', 'Upload failed. Check your connection and try again.');
+  }
+
+  importFile.value = '';
+}
+
+function showImportStatus(type, message) {
+  const colors = {
+    success: { bg: '#e0f5ee', border: '#2a9d8f', text: '#1b7a4a' },
+    error: { bg: '#fde8e8', border: '#e63946', text: '#c1121f' },
+    warning: { bg: '#fff8e1', border: '#f4a261', text: '#8a6d3b' },
+    loading: { bg: '#e8eaf0', border: '#4361ee', text: '#333' },
+  };
+  const c = colors[type];
+  importStatus.style.display = '';
+  importStatus.style.background = c.bg;
+  importStatus.style.borderLeft = `4px solid ${c.border}`;
+  importStatus.style.color = c.text;
+  importStatus.style.padding = '0.75rem 1rem';
+  importStatus.style.borderRadius = '6px';
+  importStatus.style.fontSize = '0.85rem';
+  importStatus.innerHTML = message;
+}
+
+function downloadTemplate() {
+  window.location.href = '/api/import/template';
+}
+
+// ============================================================
+// Init
+// ============================================================
+checkAuth();
+</script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obesogenic Diet Brain Study - Lab Results</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    header p { font-size: 0.85rem; color: #a8b2d1; margin-top: 0.25rem; }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* --- Form Panel --- */
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.75rem 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .panel h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1.25rem;
+      color: #16213e;
+      border-bottom: 2px solid #e8eaf0;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-group { display: flex; flex-direction: column; }
+
+    .form-group label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #555;
+      margin-bottom: 0.3rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 0.55rem 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+      background: #fafbfc;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #4361ee;
+      box-shadow: 0 0 0 3px rgba(67,97,238,0.12);
+    }
+
+    .form-group input.invalid {
+      border-color: #e63946;
+      box-shadow: 0 0 0 3px rgba(230,57,70,0.1);
+    }
+
+    .form-actions {
+      margin-top: 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 0.6rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary { background: #4361ee; color: #fff; }
+    .btn-primary:hover { background: #3a56d4; }
+
+    .btn-secondary { background: #e8eaf0; color: #444; }
+    .btn-secondary:hover { background: #d1d5db; }
+
+    .btn-danger { background: #e63946; color: #fff; }
+    .btn-danger:hover { background: #c1121f; }
+
+    .btn-export { background: #2a9d8f; color: #fff; }
+    .btn-export:hover { background: #238a7e; }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #2a9d8f;
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- Table --- */
+    .table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .table-toolbar .search-box {
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      width: 240px;
+      background: #fafbfc;
+    }
+
+    .table-toolbar .search-box:focus {
+      outline: none;
+      border-color: #4361ee;
+    }
+
+    .record-count {
+      font-size: 0.82rem;
+      color: #777;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead th {
+      background: #16213e;
+      color: #e0e0e0;
+      padding: 0.7rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+
+    thead th:hover { background: #1a2744; }
+
+    thead th .sort-arrow {
+      margin-left: 0.3rem;
+      font-size: 0.7rem;
+      opacity: 0.4;
+    }
+
+    thead th.sorted .sort-arrow { opacity: 1; }
+
+    tbody tr { border-bottom: 1px solid #eee; }
+    tbody tr:hover { background: #f7f8fc; }
+
+    tbody td {
+      padding: 0.6rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    tbody td.actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      border-radius: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #999;
+      font-size: 0.95rem;
+    }
+
+    .diet-badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .diet-badge.obesogenic { background: #fde8e8; color: #c1121f; }
+    .diet-badge.control { background: #e0f5ee; color: #1b7a4a; }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .table-toolbar { flex-direction: column; align-items: stretch; }
+      .table-toolbar .search-box { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Obesogenic Diet Brain Study</h1>
+  <p>Lab Results Tracker &mdash; Rat Subject Data Entry</p>
+</header>
+
+<div class="container">
+
+  <!-- Entry Form -->
+  <div class="panel" id="form-panel">
+    <h2 id="form-title">New Entry</h2>
+    <form id="entry-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="ratId">Rat ID</label>
+          <input type="text" id="ratId" placeholder="e.g. R-0042" required>
+        </div>
+        <div class="form-group">
+          <label for="age">Age (weeks)</label>
+          <input type="number" id="age" min="0" step="1" placeholder="e.g. 12" required>
+        </div>
+        <div class="form-group">
+          <label for="sex">Sex</label>
+          <select id="sex" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="weight">Weight (g)</label>
+          <input type="number" id="weight" min="0" step="0.1" placeholder="e.g. 320.5" required>
+        </div>
+        <div class="form-group">
+          <label for="strain">Strain</label>
+          <select id="strain" required>
+            <option value="">Select</option>
+            <option value="Sprague Dawley">Sprague Dawley</option>
+            <option value="Wistar">Wistar</option>
+            <option value="Long-Evans">Long-Evans</option>
+            <option value="Lewis">Lewis</option>
+            <option value="Fischer 344">Fischer 344</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="strain-other-group" style="display:none;">
+          <label for="strainOther">Strain (specify)</label>
+          <input type="text" id="strainOther" placeholder="Enter strain">
+        </div>
+        <div class="form-group">
+          <label for="dietGroup">Diet Group</label>
+          <select id="dietGroup" required>
+            <option value="">Select</option>
+            <option value="Obesogenic">Obesogenic</option>
+            <option value="Control">Control</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="drugName">Drug / Compound</label>
+          <input type="text" id="drugName" placeholder="e.g. Liraglutide" required>
+        </div>
+        <div class="form-group">
+          <label for="dose">Dose</label>
+          <input type="text" id="dose" placeholder="e.g. 0.2 mg/kg" required>
+        </div>
+        <div class="form-group">
+          <label for="route">Route of Administration</label>
+          <select id="route" required>
+            <option value="">Select</option>
+            <option value="IP">Intraperitoneal (IP)</option>
+            <option value="SC">Subcutaneous (SC)</option>
+            <option value="IV">Intravenous (IV)</option>
+            <option value="PO">Oral (PO)</option>
+            <option value="IM">Intramuscular (IM)</option>
+            <option value="ICV">Intracerebroventricular (ICV)</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="brainRegion">Brain Region</label>
+          <select id="brainRegion" required>
+            <option value="">Select</option>
+            <option value="Hypothalamus">Hypothalamus</option>
+            <option value="Hippocampus">Hippocampus</option>
+            <option value="Prefrontal Cortex">Prefrontal Cortex</option>
+            <option value="Striatum">Striatum</option>
+            <option value="Amygdala">Amygdala</option>
+            <option value="VTA">VTA</option>
+            <option value="Nucleus Accumbens">Nucleus Accumbens</option>
+            <option value="Brainstem">Brainstem</option>
+            <option value="Cerebellum">Cerebellum</option>
+            <option value="Whole Brain">Whole Brain</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="notes">Notes (optional)</label>
+          <input type="text" id="notes" placeholder="Any additional notes">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Add Entry</button>
+        <button type="button" class="btn btn-secondary" id="cancel-btn" style="display:none;" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Table -->
+  <div class="panel">
+    <h2>Recorded Entries</h2>
+    <div class="table-toolbar">
+      <input type="text" class="search-box" id="search" placeholder="Search entries...">
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <span class="record-count" id="record-count">0 records</span>
+        <button class="btn btn-export btn-sm" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table id="results-table">
+        <thead>
+          <tr>
+            <th data-col="ratId">Rat ID <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="age">Age <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="sex">Sex <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="weight">Weight (g) <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="strain">Strain <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="dietGroup">Diet <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="drugName">Drug <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="dose">Dose <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="route">Route <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="brainRegion">Brain Region <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="notes">Notes <span class="sort-arrow">&#9650;</span></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state">No entries yet. Use the form above to add your first record.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ---------- State ----------
+  let entries = JSON.parse(localStorage.getItem('labEntries') || '[]');
+  let editingId = null;
+  let sortCol = null;
+  let sortAsc = true;
+
+  const fields = ['ratId','age','sex','weight','strain','strainOther','dietGroup','drugName','dose','route','brainRegion','notes'];
+  const requiredFields = ['ratId','age','sex','weight','strain','dietGroup','drugName','dose','route','brainRegion'];
+
+  // ---------- DOM refs ----------
+  const form = document.getElementById('entry-form');
+  const tableBody = document.getElementById('table-body');
+  const emptyState = document.getElementById('empty-state');
+  const searchBox = document.getElementById('search');
+  const recordCount = document.getElementById('record-count');
+  const formTitle = document.getElementById('form-title');
+  const submitBtn = document.getElementById('submit-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const toastEl = document.getElementById('toast');
+  const strainSelect = document.getElementById('strain');
+  const strainOtherGroup = document.getElementById('strain-other-group');
+
+  // ---------- Strain "Other" toggle ----------
+  strainSelect.addEventListener('change', () => {
+    strainOtherGroup.style.display = strainSelect.value === 'Other' ? '' : 'none';
+  });
+
+  // ---------- Form submit ----------
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Validate
+    let valid = true;
+    requiredFields.forEach(f => {
+      const el = document.getElementById(f);
+      if (!el.value.trim()) { el.classList.add('invalid'); valid = false; }
+      else el.classList.remove('invalid');
+    });
+    if (!valid) return;
+
+    const data = {};
+    fields.forEach(f => { data[f] = document.getElementById(f).value.trim(); });
+
+    // Resolve strain
+    if (data.strain === 'Other' && data.strainOther) {
+      data.strain = data.strainOther;
+    }
+    delete data.strainOther;
+
+    if (editingId) {
+      const idx = entries.findIndex(e => e.id === editingId);
+      if (idx !== -1) { entries[idx] = { ...entries[idx], ...data }; }
+      editingId = null;
+      formTitle.textContent = 'New Entry';
+      submitBtn.textContent = 'Add Entry';
+      cancelBtn.style.display = 'none';
+      toast('Entry updated');
+    } else {
+      data.id = crypto.randomUUID();
+      data.createdAt = new Date().toISOString();
+      entries.push(data);
+      toast('Entry added');
+    }
+
+    save();
+    render();
+    form.reset();
+    strainOtherGroup.style.display = 'none';
+  });
+
+  // ---------- Edit / Delete ----------
+  function editEntry(id) {
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+    editingId = id;
+    fields.forEach(f => {
+      if (f === 'strainOther') return;
+      const el = document.getElementById(f);
+      el.value = entry[f] || '';
+    });
+    formTitle.textContent = 'Edit Entry';
+    submitBtn.textContent = 'Update Entry';
+    cancelBtn.style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    form.reset();
+    formTitle.textContent = 'New Entry';
+    submitBtn.textContent = 'Add Entry';
+    cancelBtn.style.display = 'none';
+    strainOtherGroup.style.display = 'none';
+  }
+
+  function deleteEntry(id) {
+    if (!confirm('Delete this entry?')) return;
+    entries = entries.filter(e => e.id !== id);
+    save();
+    render();
+    toast('Entry deleted');
+  }
+
+  // ---------- Search ----------
+  searchBox.addEventListener('input', render);
+
+  // ---------- Sort ----------
+  document.querySelectorAll('thead th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (sortCol === col) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = true; }
+      document.querySelectorAll('thead th').forEach(h => h.classList.remove('sorted'));
+      th.classList.add('sorted');
+      th.querySelector('.sort-arrow').innerHTML = sortAsc ? '&#9650;' : '&#9660;';
+      render();
+    });
+  });
+
+  // ---------- Render ----------
+  function render() {
+    const q = searchBox.value.toLowerCase();
+    let filtered = entries.filter(e =>
+      Object.values(e).some(v => String(v).toLowerCase().includes(q))
+    );
+
+    if (sortCol) {
+      filtered.sort((a, b) => {
+        let va = a[sortCol] || '', vb = b[sortCol] || '';
+        if (sortCol === 'age' || sortCol === 'weight') {
+          va = parseFloat(va) || 0; vb = parseFloat(vb) || 0;
+        }
+        if (va < vb) return sortAsc ? -1 : 1;
+        if (va > vb) return sortAsc ? 1 : -1;
+        return 0;
+      });
+    }
+
+    tableBody.innerHTML = '';
+    emptyState.style.display = filtered.length ? 'none' : '';
+
+    filtered.forEach(e => {
+      const dietClass = e.dietGroup === 'Obesogenic' ? 'obesogenic' : 'control';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(e.ratId)}</td>
+        <td>${esc(e.age)}</td>
+        <td>${esc(e.sex)}</td>
+        <td>${esc(e.weight)}</td>
+        <td>${esc(e.strain)}</td>
+        <td><span class="diet-badge ${dietClass}">${esc(e.dietGroup)}</span></td>
+        <td>${esc(e.drugName)}</td>
+        <td>${esc(e.dose)}</td>
+        <td>${esc(e.route)}</td>
+        <td>${esc(e.brainRegion)}</td>
+        <td>${esc(e.notes || '—')}</td>
+        <td class="actions">
+          <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.id}')">Del</button>
+        </td>`;
+      tableBody.appendChild(tr);
+    });
+
+    recordCount.textContent = `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
+  }
+
+  // ---------- Persistence ----------
+  function save() { localStorage.setItem('labEntries', JSON.stringify(entries)); }
+
+  // ---------- Export CSV ----------
+  function exportCSV() {
+    if (!entries.length) return toast('No data to export');
+    const cols = ['ratId','age','sex','weight','strain','dietGroup','drugName','dose','route','brainRegion','notes','createdAt'];
+    const headers = ['Rat ID','Age (weeks)','Sex','Weight (g)','Strain','Diet Group','Drug','Dose','Route','Brain Region','Notes','Created'];
+    let csv = headers.join(',') + '\n';
+    entries.forEach(e => {
+      csv += cols.map(c => `"${(e[c] || '').replace(/"/g, '""')}"`).join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `lab_results_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    toast('CSV exported');
+  }
+
+  // ---------- Clear All ----------
+  function clearAll() {
+    if (!entries.length) return;
+    if (!confirm('Delete ALL entries? This cannot be undone.')) return;
+    entries = [];
+    save();
+    render();
+    toast('All entries cleared');
+  }
+
+  // ---------- Utils ----------
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+
+  // ---------- Init ----------
+  render();
+
+  // Remove invalid style on input
+  document.querySelectorAll('#entry-form input, #entry-form select').forEach(el => {
+    el.addEventListener('input', () => el.classList.remove('invalid'));
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+node_modules/
+lab_data.db
+sessions.db
+*.xlsx
