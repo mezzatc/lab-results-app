@@ -227,10 +227,10 @@ app.get('/api/export/excel', requireAuth, async (req, res) => {
   for (let i = 2; i <= rows.length + 1; i++) {
     if (i % 2 === 0) sheet.getRow(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F8FC' } };
   }
+  const buffer = await workbook.xlsx.writeBuffer();
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename=lab_results_${new Date().toISOString().slice(0,10)}.xlsx`);
-  await workbook.xlsx.write(res);
-  res.end();
+  res.send(buffer);
 });
 
 // --- Excel Import ---
@@ -305,10 +305,10 @@ app.get('/api/import/template', requireAuth, async (req, res) => {
   sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16213E' } };
   sheet.addRow({ rat_id: 'R-001', age: 12, sex: 'Male', weight: 320.5, strain: 'Sprague Dawley', diet_group: 'Obesogenic', drug_name: 'Liraglutide', dose: '0.2 mg/kg', route: 'SC', brain_region: 'Hypothalamus', notes: 'Example entry' });
+  const buffer = await workbook.xlsx.writeBuffer();
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename=import_template.xlsx');
-  await workbook.xlsx.write(res);
-  res.end();
+  res.send(buffer);
 });
 
 // --- Data Dumps ---
@@ -383,10 +383,10 @@ app.get('/api/dumps/:id/export', requireAuth, async (req, res) => {
   for (let i = 2; i <= entries.length + 1; i++) {
     if (i % 2 === 0) sheet.getRow(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F8FC' } };
   }
+  const buffer = await workbook.xlsx.writeBuffer();
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename=${dump.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
-  await workbook.xlsx.write(res);
-  res.end();
+  res.send(buffer);
 });
 
 // --- Chart Data ---
