@@ -1196,9 +1196,15 @@ async function storeDump() {
     return;
   }
 
+  // Clear all entries from Results after storing
+  for (const e of entries) {
+    await fetch(`/api/entries/${e.id}`, { method: 'DELETE' });
+  }
+
   hideStoreDialog();
-  toast(`"${name}" stored successfully`);
+  await loadEntries();
   await loadDumps();
+  toast(`"${name}" stored and results cleared`);
 }
 
 // ============================================================
